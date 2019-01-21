@@ -1,5 +1,6 @@
 const { Readable, Transform } = require('stream');
 const fs = require('fs');
+const { EOL } = require('os');
 const pathModule = require('path');
 const csvjson = require('csvjson');
 const program = require('commander');
@@ -18,9 +19,13 @@ const reverse = (text) => {
     process.exit();
   }
 
-  const readStream = new Readable();
-  readStream.push(text);
-  readStream.push(null);
+  const readStream = new Readable({
+    read() {
+      readStream.push(text);
+      readStream.push(EOL);
+      readStream.push(null);
+    },
+  });
 
   const reverseTransform = new Transform({
     transform(chunk, encoding, callback) {
@@ -44,9 +49,13 @@ const transform = (text) => {
     process.exit();
   }
 
-  const readStream = new Readable();
-  readStream.push(text);
-  readStream.push(null);
+  const readStream = new Readable({
+    read() {
+      readStream.push(text);
+      readStream.push(EOL);
+      readStream.push(null);
+    },
+  });
 
   const upperCaseTransform = new Transform({
     transform(chunk, encoding, callback) {
@@ -189,6 +198,11 @@ const cssBundler = (path) => {
 
     readStream.pipe(writeStream);
   });
+
+  // append 'nodejs-homework3.css' to bundle
+  const readStream = fs.createReadStream('./nodejs-homework3.css');
+  readStream.pipe(writeStream);
+
   log('Bundle has been created successfully.');
 };
 
@@ -231,5 +245,11 @@ const actions = {
   cssBundler: () => cssBundler(path),
 };
 
-// call selected action or show help if not defined
-(actions[action] || program.help())();
+// check if provided action is valid
+if (!(action in actions)) {
+  log(chalk.red('\nThe provided action is invalid. Please provide correct action. See usage below.\n'));
+  program.help();
+}
+
+// call selected action
+actions[action]();
